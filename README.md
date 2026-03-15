@@ -51,7 +51,7 @@ npm run dev
 ---
 
 ## 👨‍💻 ผู้พัฒนา
-- **FLUKEXD** - *Lead Developer*
+- **FLUKEXD** 
 
 ---
 *Last Updated: 2026-03-16*
