@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const { calculateFare, estimateTravelTime } = require('../utils/fareCalculator');
 
 // =============================================
 // GET /api/trips - ประวัติการเดินทางทั้งหมด
@@ -108,18 +109,26 @@ router.get('/recent', auth, async (req, res) => {
 // POST /api/trips - บันทึกการเดินทางใหม่
 // =============================================
 router.post('/', auth, async (req, res) => {
+  const { card_id, from_station_code, to_station_code } = req.body;
+
+  // ✅ FIX: Validate BEFORE acquiring DB connection
+  if (!card_id || !from_station_code || !to_station_code) {
+    return res.status(400).json({
+      success: false,
+      message: 'กรุณาระบุ card_id, from_station_code, to_station_code'
+    });
+  }
+
+  if (from_station_code === to_station_code) {
+    return res.status(400).json({
+      success: false,
+      message: 'สถานีต้นทางและปลายทางต้องไม่เหมือนกัน'
+    });
+  }
+
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-
-    const { card_id, from_station_code, to_station_code } = req.body;
-
-    if (!card_id || !from_station_code || !to_station_code) {
-      return res.status(400).json({
-        success: false,
-        message: 'กรุณาระบุ card_id, from_station_code, to_station_code'
-      });
-    }
 
     // Verify card ownership
     const [cards] = await conn.query(
@@ -156,14 +165,8 @@ router.post('/', auth, async (req, res) => {
     const fromStation = fromStations[0];
     const toStation = toStations[0];
 
-    // Calculate fare
-    const zoneDiff = Math.abs(fromStation.zone - toStation.zone);
-    const [fareRules] = await conn.query(
-      'SELECT fare FROM fare_rules WHERE zone_count = ?',
-      [Math.min(zoneDiff, 12)]
-    );
-
-    const fare = fareRules.length > 0 ? parseFloat(fareRules[0].fare) : 59;
+    // ✅ FIX: Use shared fare calculator (single source of truth)
+    const { fare, stationCount } = calculateFare(fromStation, toStation, from_station_code, to_station_code);
 
     // Check balance
     if (parseFloat(card.balance) < fare) {
@@ -186,9 +189,10 @@ router.post('/', auth, async (req, res) => {
       [newBalance, card_id]
     );
 
-    // Record trip
+    // ✅ FIX: Use stationCount (correct for cross-line) instead of station_order diff
     const now = new Date();
-    const exitTime = new Date(now.getTime() + (Math.abs(fromStation.station_order - toStation.station_order) * 2 * 60000));
+    const travelMinutes = estimateTravelTime(stationCount);
+    const exitTime = new Date(now.getTime() + (travelMinutes * 60000));
 
     const [result] = await conn.query(
       `INSERT INTO trips (card_id, user_id, from_station_code, from_station_name, to_station_code, to_station_name, fare, line_name, entry_time, exit_time, trip_date)

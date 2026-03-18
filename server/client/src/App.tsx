@@ -1,4 +1,4 @@
-import React from 'react';
+// React import not needed with Vite JSX transform
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import BottomNav from './components/BottomNav';
@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import FareCalculatorPage from './pages/FareCalculatorPage';
 import HistoryPage from './pages/HistoryPage';
 import MapPage from './pages/MapPage';
+import SettingsPage from './pages/SettingsPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -71,6 +72,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <HistoryPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
               </ProtectedRoute>
             } 
           />

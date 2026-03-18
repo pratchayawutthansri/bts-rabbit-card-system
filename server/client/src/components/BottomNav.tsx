@@ -1,12 +1,13 @@
-import React from 'react';
+import { type FC } from 'react';
 import { NavLink } from 'react-router-dom';
 
-const BottomNav: React.FC = () => {
+const BottomNav: FC = () => {
   const navItems = [
     { path: '/', label: 'หน้าหลัก', icon: '🏠' },
     { path: '/calculate', label: 'คำนวณ', icon: '🔢' },
     { path: '/map', label: 'แผนที่', icon: '🗺️' },
     { path: '/history', label: 'ประวัติ', icon: '📋' },
+    { path: '/settings', label: 'ตั้งค่า', icon: '⚙️' },
   ];
 
   return (

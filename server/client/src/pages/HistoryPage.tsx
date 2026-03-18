@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import api from '../api/axios';
-import type { Trip } from '../types';
+import type { Trip, TripSummary } from '../types';
 
-const HistoryPage: React.FC = () => {
+const HistoryPage: FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
-  const [summary, setSummary] = useState<any>(null);
+  const [summary, setSummary] = useState<TripSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

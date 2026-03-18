@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const { calculateFare, calculateStationCount, estimateTravelTime, EXTENSION_STATIONS } = require('../utils/fareCalculator');
 
 // =============================================
 // GET /api/fare/stations - รายชื่อสถานี BTS ทั้งหมด
@@ -100,29 +101,13 @@ router.get('/calculate', async (req, res) => {
     const fromStation = fromStations[0];
     const toStation = toStations[0];
 
-    // Calculate zone difference
-    const zoneDiff = Math.abs(fromStation.zone - toStation.zone);
-    const cappedZone = Math.min(zoneDiff, 12);
-
-    // Get fare from rules
-    const [fareRules] = await pool.query(
-      'SELECT * FROM fare_rules WHERE zone_count = ?',
-      [cappedZone]
+    // Use shared fare calculator (single source of truth with trips.js)
+    const { fare: totalFare, stationCount, extensionSurcharge } = calculateFare(
+      fromStation, toStation, fromStation.station_code, toStation.station_code
     );
+    const estimatedMinutes = estimateTravelTime(stationCount);
 
-    const fare = fareRules.length > 0 ? parseFloat(fareRules[0].fare) : 59;
-
-    // Calculate approximate travel time (2 min per station)
-    let stationCount;
-    if (fromStation.line_id === toStation.line_id) {
-      stationCount = Math.abs(fromStation.station_order - toStation.station_order);
-    } else {
-      // Cross line - rough estimate via Siam interchange
-      stationCount = Math.abs(fromStation.station_order - 24) + Math.abs(toStation.station_order - 1) + 2;
-    }
-    const estimatedMinutes = stationCount * 2;
-
-    // Determine line info
+    // Build line info for response
     let lineInfo;
     if (fromStation.line_id === toStation.line_id) {
       lineInfo = {
@@ -139,6 +124,12 @@ router.get('/calculate', async (req, res) => {
         ],
         interchange_station: 'สยาม (CEN)'
       };
+    }
+
+    // Description
+    let fareDesc = `${stationCount} สถานี`;
+    if (extensionSurcharge > 0) {
+      fareDesc += ` (รวมส่วนต่อขยาย +฿${extensionSurcharge})`;
     }
 
     res.json({
@@ -159,10 +150,10 @@ router.get('/calculate', async (req, res) => {
           zone: toStation.zone
         },
         fare: {
-          amount: fare,
-          formatted: `฿${fare.toFixed(0)}`,
-          zone_count: zoneDiff,
-          description: fareRules.length > 0 ? fareRules[0].description : 'ข้าม 12+ zones'
+          amount: totalFare,
+          formatted: `฿${totalFare.toFixed(0)}`,
+          zone_count: stationCount,
+          description: fareDesc
         },
         travel: {
           station_count: stationCount,

@@ -120,34 +120,34 @@ router.post('/', auth, async (req, res) => {
 // POST /api/cards/:id/topup - เติมเงิน
 // =============================================
 router.post('/:id/topup', auth, async (req, res) => {
+  const { amount, method } = req.body;
+  const cardId = req.params.id;
+
+  // Validate BEFORE acquiring connection
+  if (!amount || amount <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'กรุณาระบุจำนวนเงินที่ถูกต้อง'
+    });
+  }
+
+  if (amount < 100) {
+    return res.status(400).json({
+      success: false,
+      message: 'จำนวนเงินขั้นต่ำ ฿100'
+    });
+  }
+
+  if (amount > 4000) {
+    return res.status(400).json({
+      success: false,
+      message: 'จำนวนเงินสูงสุด ฿4,000'
+    });
+  }
+
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-
-    const { amount, method } = req.body;
-    const cardId = req.params.id;
-
-    // Validate
-    if (!amount || amount <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'กรุณาระบุจำนวนเงินที่ถูกต้อง'
-      });
-    }
-
-    if (amount < 100) {
-      return res.status(400).json({
-        success: false,
-        message: 'จำนวนเงินขั้นต่ำ ฿100'
-      });
-    }
-
-    if (amount > 4000) {
-      return res.status(400).json({
-        success: false,
-        message: 'จำนวนเงินสูงสุด ฿4,000'
-      });
-    }
 
     // Check card ownership
     const [cards] = await conn.query(

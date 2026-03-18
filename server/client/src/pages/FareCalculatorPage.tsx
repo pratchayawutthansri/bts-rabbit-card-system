@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import api from '../api/axios';
 import type { StationGroup, FareResult, Station } from '../types';
 
-const FareCalculatorPage: React.FC = () => {
+const FareCalculatorPage: FC = () => {
   const [stationLines, setStationLines] = useState<StationGroup[]>([]);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -23,25 +23,30 @@ const FareCalculatorPage: React.FC = () => {
     fetchStations();
   }, []);
 
-  const handleCalculate = async () => {
-    if (!from || !to) return;
-    setLoading(true);
-    try {
-      const res = await api.get(`/fare/calculate?from=${from}&to=${to}`);
-      if (res.data.success) {
-        setResult(res.data.data);
-      }
-    } catch (err) {
-      console.error('Calculation error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Auto-calculate when both stations are selected
   useEffect(() => {
-    if (from && to) {
-      handleCalculate();
+    if (!from || !to) {
+      setResult(null);
+      return;
     }
+    
+    let cancelled = false;
+    const calculate = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get(`/fare/calculate?from=${from}&to=${to}`);
+        if (!cancelled && res.data.success) {
+          setResult(res.data.data);
+        }
+      } catch (err) {
+        console.error('Calculation error:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    calculate();
+    return () => { cancelled = true; };
   }, [from, to]);
 
   return (

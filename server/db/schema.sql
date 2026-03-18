@@ -220,7 +220,7 @@ INSERT INTO fare_rules (zone_count, fare, description) VALUES
 -- =============================================
 -- Password: demo1234 (bcrypt hashed)
 INSERT INTO users (username, email, password, full_name, phone) VALUES
-('demo', 'demo@btsrabbit.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'ผู้ใช้ทดสอบ', '0891234567');
+('demo', 'demo@btsrabbit.com', '$2a$10$/AGiAeLl/EjlrCryDijZ8.MkE.mfd7ajGZdkVMX8jwMD7ODWK8L2y', 'ผู้ใช้ทดสอบ', '0891234567');
 
 INSERT INTO cards (user_id, card_number, card_name, balance, issued_date, expiry_date) VALUES
 (1, 'XXXX XXXX XXXX 4829', 'Rabbit Card', 342.00, '2024-01-15', '2029-01-15');

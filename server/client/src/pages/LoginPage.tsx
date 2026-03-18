@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import { useState, type FC, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AxiosError } from 'axios';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
-const LoginPage: React.FC = () => {
+const LoginPage: FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -11,7 +12,7 @@ const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -22,8 +23,9 @@ const LoginPage: React.FC = () => {
         login(res.data.data.token, res.data.data.user);
         navigate('/');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'การเข้าสู่ระบบล้มเหลว');
+    } catch (err) {
+      const msg = err instanceof AxiosError ? err.response?.data?.message : 'การเข้าสู่ระบบล้มเหลว';
+      setError(msg || 'การเข้าสู่ระบบล้มเหลว');
     } finally {
       setLoading(false);
     }

@@ -41,6 +41,8 @@ export interface Station {
   line_name_th: string;
   line_color: string;
   zone: number;
+  station_order?: number;
+  is_interchange?: number;
 }
 
 export interface StationGroup {
@@ -84,3 +86,10 @@ export interface FareResult {
     interchange_station?: string;
   };
 }
+
+export interface TripSummary {
+  total_trips: number;
+  total_fare: number;
+  avg_fare: number;
+}
+
